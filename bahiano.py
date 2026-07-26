@@ -1,206 +1,273 @@
 import requests
-import re
 
-def consultar_cnpj_completo(cnpj_raw):
-    # Limpa caracteres especiais do CNPJ
-    cnpj = re.sub(r'\D', '', cnpj_raw)
-    
-    if len(cnpj) != 14:
-        print("\n[!] Erro: O CNPJ deve ter exatamente 14 dígitos.\n")
-        return
-
-    url = f"https://receitaws.com.br/v1/cnpj/{cnpj}"
-    headers = {"Accept": "application/json"}
-
-    print(f"\nBusca realizada para o CNPJ: {cnpj}...\n")
-
-    try:
-        resposta = requests.get(url, headers=headers, timeout=10)
-        
-        if resposta.status_code == 429:
-            print("[!] Limite do plano gratuito atingido (máx. 3 consultas/minuto).")
-            return
-
-        if resposta.status_code == 200:
-            dados = resposta.json()
-            
-            if dados.get("status") == "ERROR":
-                print(f"[!] Erro: {dados.get('message', 'CNPJ não encontrado.')}\n")
-                return
-
-            # --- EXIBIÇÃO COMPLETA DOS DADOS PÚBLICOS ---
-            print("=" * 55)
-            print("             INFORMAÇÕES DA EMPRESA (CNPJ)             ")
-            print("=" * 55)
-            
-            # Dados Principais
-            print(f"• Razão Social    : {dados.get('nome', 'N/A')}")
-            print(f"• Nome Fantasia   : {dados.get('fantasia', 'N/A')}")
-            print(f"• CNPJ            : {dados.get('cnpj', 'N/A')}")
-            print(f"• Situação        : {dados.get('situacao', 'N/A')} (Desde: {dados.get('data_situacao', 'N/A')})")
-            print(f"• Data de Abertura: {dados.get('abertura', 'N/A')}")
-            print(f"• Tipo / Porte    : {dados.get('tipo', 'N/A')} / {dados.get('porte', 'N/A')}")
-            print(f"• Natureza Juríd. : {dados.get('natureza_juridica', 'N/A')}")
-            print(f"• Capital Social  : R$ {dados.get('capital_social', '0,00')}")
-            
-            # Contato
-            print("\n--- CONTATO ---")
-            print(f"• E-mail          : {dados.get('email', 'N/A')}")
-            print(f"• Telefone        : {dados.get('telefone', 'N/A')}")
-
-            # Endereço
-            print("\n--- ENDEREÇO ---")
-            print(f"• CEP             : {dados.get('cep', 'N/A')}")
-            print(f"• Logradouro      : {dados.get('logradouro', 'N/A')}, Nº {dados.get('numero', 'N/A')}")
-            print(f"• Complemento     : {dados.get('complemento', 'N/A')}")
-            print(f"• Bairro          : {dados.get('bairro', 'N/A')}")
-            print(f"• Município / UF  : {dados.get('municipio', 'N/A')} - {dados.get('uf', 'N/A')}")
-
-            # Atividade Principal
-            print("\n--- ATIVIDADE PRINCIPAL ---")
-            for ativ in dados.get('atividade_principal', []):
-                print(f"• [{ativ.get('code')}] {ativ.get('text')}")
-
-            # Atividades Secundárias
-            secundarias = dados.get('atividades_secundarias', [])
-            if secundarias:
-                print("\n--- ATIVIDADES SECUNDÁRIAS ---")
-                for ativ in secundarias[:3]: # Exibe as 3 primeiras
-                    print(f"• [{ativ.get('code')}] {ativ.get('text')}")
-
-            # Quadro de Sócios e Administradores (QSA)
-            socios = dados.get('qsa', [])
-            if socios:
-                print("\n--- QUADRO DE SÓCIOS (QSA) ---")
-                for soc in socios:
-                    print(f"• Nome: {soc.get('nome')} | Qualificação: {soc.get('qual')}")
-
-            print("=" * 55 + "\n")
-
-        else:
-            print(f"[!] Erro no servidor: Código {resposta.status_code}\n")
-
-    except Exception as e:
-        print(f"[!] Falha na conexão: {e}\n")
-
-if __name__ == "__main__":
-    entrada = input("Digite o CNPJ que deseja consultar: ").strip()
-    if entrada:
-        consultar_cnpj_completo(entrada)
-
-import os
-import re
-import requests
-
-# 1. Definição de Cores ANSI
+# Cores
 VERDE = "\033[92m"
-BRANCO = "\033[1;37m"
+BRANCO = "\033[97m"
 AMARELO = "\033[93m"
 VERMELHO = "\033[91m"
 CINZA = "\033[90m"
 RESET = "\033[0m"
 
-def limpar_tela():
-    # Limpa o terminal no Linux/Termux/Windows
-    os.system("cls" if os.name == "nt" else "clear")
-
 def exibir_banner():
-    limpar_tela()
-    
-    # Arte ASCII em Verde
-    banner = f"""{VERDE}
-      .---.
-     /     \\
-    | () () |
-     \\  ^  /
-      |||||
-      '|||'
-    {RESET}"""
-    
-    print(banner)
-    print(f"{BRANCO}==============================================")
-    print(f"{VERDE}            CONSULTA DE CNPJ (BAHIANO77z)      ")
-    print(f"{BRANCO}==============================================")
-    print(f"{CINZA}  [+] Criador : {BRANCO} (BAHIANO77z)")
-    print(f"{CINZA}  [+] Versão  : {BRANCO}Em breve Outros tipos de consultas")
-    print(f"{BRANCO}=============================================={RESET}\n")
+    print(r"""
+   /\_/\  
+  | (o)(o) |
+     ^    
+    ||||| 
+    '|||' 
+""")
+    print("=======================================================")
+    print(f"             {VERDE}CONSULTA DE CNPJ (BAHIANO07z){RESET}")
+    print("=======================================================")
+    print("  [+] Criador : (BAHIANO07z)")
+    print("  [+] Versão  : Multi-Consultas")
+    print("=======================================================\n")
 
-def consultar_cnpj():
-    exibir_banner()
-    entrada = input(f"{BRANCO}Digite o CNPJ para consultar: {RESET}").strip()
-    
-    # Limpa pontuações do CNPJ
-    cnpj = re.sub(r'\D', '', entrada)
-    
+# --- FUNÇÃO CNPJ ---
+def consultar_cnpj_completo(cnpj_raw):
+    cnpj = "".join(filter(str.isdigit, cnpj_raw))
     if len(cnpj) != 14:
-        print(f"\n{VERMELHO}[!] Erro: O CNPJ deve conter 14 dígitos.{RESET}\n")
-        input(f"{CINZA}Pressione Enter para voltar...{RESET}")
+        print(f"\n{VERMELHO}[!] CNPJ inválido. Deve conter 14 dígitos.{RESET}")
+        input(f"\n{CINZA}Pressione Enter para voltar ao menu...{RESET}")
         return
 
-    url = f"https://receitaws.com.br/v1/cnpj/{cnpj}"
-    headers = {"Accept": "application/json"}
-
-    print(f"\n{AMARELO}[*] Consulta feita com Sucesso.{RESET}\n")
+    url = f"https://publica.cnpj.ws/cnpj/{cnpj}"
+    print(f"\nBusca realizada para o CNPJ: {cnpj}...")
 
     try:
-        resposta = requests.get(url, headers=headers, timeout=10)
-        
-        if resposta.status_code == 429:
-            print(f"{AMARELO}[!] Limite atingido (máx. 3 consultas/min no plano grátis).{RESET}\n")
-            input(f"{CINZA}Pressione Enter para voltar...{RESET}")
-            return
-
+        resposta = requests.get(url)
         if resposta.status_code == 200:
             dados = resposta.json()
+            razao = dados.get("razao_social", "N/A")
+            estab = dados.get("estabelecimento", {})
+            fantasia = estab.get("nome_fantasia", "N/A")
+            situacao = estab.get("situacao_cadastral", "N/A")
+            data_sit = estab.get("data_situacao_cadastral", "N/A")
+            data_abertura = estab.get("data_inicio_atividade", "N/A")
             
-            if dados.get("status") == "ERROR":
-                print(f"{VERMELHO}[!] Erro: {dados.get('message', 'CNPJ não encontrado.')}{RESET}\n")
-                input(f"{CINZA}Pressione Enter para voltar...{RESET}")
-                return
+            porte_nome = dados.get("porte", {}).get("descricao", "N/A")
+            tipo = "MATRIZ" if estab.get("tipo") == "Matriz" else "FILIAL"
+            natureza = dados.get("natureza_juridica", {}).get("descricao", "N/A")
+            capital = dados.get("capital_social", "N/A")
+            email = estab.get("email", "N/A")
 
-            # Exibição dos Dados Formatados
-            print(f"{BRANCO}==============================================")
-            print(f"{VERDE}             DADOS DA EMPRESA                 ")
-            print(f"{BRANCO}==============================================")
-            print(f"{VERDE}• Razão Social  :{RESET} {dados.get('nome', 'N/A')}")
-            print(f"{VERDE}• Nome Fantasia :{RESET} {dados.get('fantasia', 'N/A')}")
-            print(f"{VERDE}• CNPJ          :{RESET} {dados.get('cnpj', 'N/A')}")
-            print(f"{VERDE}• Situação      :{RESET} {dados.get('situacao', 'N/A')}")
-            print(f"{VERDE}• Abertura      :{RESET} {dados.get('abertura', 'N/A')}")
-            print(f"{VERDE}• Porte         :{RESET} {dados.get('porte', 'N/A')}")
-            print(f"{VERDE}• Capital Social:{RESET} R$ {dados.get('capital_social', '0,00')}")
-            
-            print(f"\n{VERDE}--- CONTATO & ENDEREÇO ---{RESET}")
-            print(f"{VERDE}• E-mail        :{RESET} {dados.get('email', 'N/A')}")
-            print(f"{VERDE}• Telefone      :{RESET} {dados.get('telefone', 'N/A')}")
-            print(f"{VERDE}• CEP           :{RESET} {dados.get('cep', 'N/A')}")
-            print(f"{VERDE}• Endereço     :{RESET} {dados.get('logradouro', 'N/A')}, Nº {dados.get('numero', 'N/A')}")
-            print(f"{VERDE}• Cidade/UF     :{RESET} {dados.get('municipio', 'N/A')} - {dados.get('uf', 'N/A')}")
-            print(f"{BRANCO}=============================================={RESET}\n")
-
+            print("=" * 55)
+            print("             INFORMAÇÕES DA EMPRESA (CNPJ)")
+            print("=" * 55)
+            print(f"• Razão Social : {razao}")
+            print(f"• Nome Fantasia: {fantasia}")
+            print(f"• CNPJ         : {cnpj_raw}")
+            print(f"• Situação     : {situacao} (Desde: {data_sit})")
+            print(f"• Data Abertura: {data_abertura}")
+            print(f"• Tipo / Porte : {tipo} / {porte_nome}")
+            print(f"• Natureza     : {natureza}")
+            print(f"• Capital Social: R$ {capital}")
+            print("\n--- CONTATO ---")
+            print(f"• E-mail       : {email}")
+            print("=" * 55)
         else:
-            print(f"{VERMELHO}[!] Erro no servidor: Código {resposta.status_code}{RESET}\n")
+            print(f"\n{VERMELHO}[!] Erro ao buscar CNPJ (Status: {resposta.status_code}){RESET}")
+    except Exception as e:
+        print(f"\n{VERMELHO}[!] Falha na conexão: {e}{RESET}")
+
+    input(f"\n{CINZA}Pressione Enter para voltar ao menu...{RESET}")
+
+# --- FUNÇÃO CONSULTAR REGISTRO ---
+def consultar_ekyc_completo(dado_input):
+    API_KEY = "YIe857PGnVvfbIm6F4tGGKectJIrHfDnZc5rsA1ieEFKvSj9KFuGPYrahInY".strip()
+    dado = dado_input.strip().replace(" ", "")
+
+    if not dado.startswith("+"):
+        dado = f"+{dado}"
+
+    url = f"https://business.didit.me/api/v1/sessions/{dado}"
+
+    headers = {
+        "X-API-Key": API_KEY,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
+
+    payload = {
+        "service_type": "ws",
+        "identifier": dado
+    }
+
+    print(f"\nConsultando registro para: {dado}...")
+
+    try:
+        resposta = requests.post(url, json=payload, headers=headers, timeout=10)
+        dados = resposta.json()
+
+        print("=" * 55)
+        print("             RESULTADO CONSULTA DE REGISTRO")
+        print("=" * 55)
+        print(f"• Telefone / Dado : {dado}")
+
+        if dados.get("success"):
+            data_info = dados.get("data", {})
+            registrado = data_info.get("registered")
+
+            if registrado is True:
+                print(f"• Status WhatsApp : REGISTRADO (Possui WhatsApp)")
+            elif registrado is False:
+                print(f"• Status WhatsApp : NÃO REGISTRADO (Sem WhatsApp)")
+            else:
+                print(f"• Status WhatsApp : Desconhecido")
+        else:
+            print(f"• Erro na Busca   : {dados.get('message', 'Erro desconhecido')}")
+
+        print("=" * 55)
 
     except Exception as e:
-        print(f"{VERMELHO}[!] Falha na conexão: {e}{RESET}\n")
+        print(f"\n{VERMELHO}[!] Falha na conexão: {e}{RESET}")
 
-    input(f"{CINZA}Pressione Enter para voltar ao menu...{RESET}")
+    input(f"\n{CINZA}Pressione Enter para voltar ao menu...{RESET}")
 
-# Loop Principal do Menu
+
+# --- MENU PRINCIPAL ---
 if __name__ == "__main__":
     while True:
         exibir_banner()
         print(f"{VERDE}[1]{RESET} {BRANCO}Consultar CNPJ{RESET}")
-        print(f"{VERDE}[0]{RESET} {BRANCO}Sair{RESET}\n")
+        print(f"{VERDE}[2]{RESET} {BRANCO}Consultar Registro{RESET}")
+        print(f"{VERDE}[0]{RESET} {BRANCO}Sair{RESET}")
         
-        opcao = input(f"{VERDE}Opção > {RESET}").strip()
-        
+        opcao = input(f"\n{VERDE}Opção > {RESET}").strip()
+
         if opcao == "1":
-            consultar_cnpj()
+            # chama sua função de CNPJ
+            pass 
+        elif opcao == "2":
+            dado = input("\nDigite o Telefone com DDI e DDD (Ex: 5571999999999): ")
+            consultar_ekyc_completo(dado)
         elif opcao == "0":
-            print(f"\n{AMARELO}Saindo...{RESET}\n")
+            print(f"\n{VERDE}Saindo...{RESET}\n")
             break
+
+
+# --- 3. NOVA FUNÇÃO: CONSULTA CEP (AWESOMEAPI) ---
+def consultar_cep(cep):
+    API_KEY_AWESOME = "bdf772a3a46869..."  # Cole sua chave completa aqui
+    cep = cep.strip().replace("-", "").replace(".", "")
+    url = f"https://cep.awesomeapi.com.br/json/{cep}"
+    headers = {
+        "Authorization": f"Bearer {API_KEY_AWESOME}"
+    }
+
+    print(f"\nConsultando CEP: {cep}...")
+
+    try:
+        resposta = requests.get(url, headers=headers, timeout=10)
+        dados = resposta.json()
+
+        print("=" * 55)
+        print("             RESULTADO CONSULTA DE CEP")
+        print("=" * 55)
+
+        if resposta.status_code == 200:
+            print(f"• Logradouro : {dados.get('address', 'N/A')}")
+            print(f"• Bairro     : {dados.get('district', 'N/A')}")
+            print(f"• Cidade     : {dados.get('city', 'N/A')}")
+            print(f"• Estado     : {dados.get('state', 'N/A')}")
+            print(f"• DDD        : {dados.get('ddd', 'N/A')}")
         else:
-            print(f"\n{VERMELHO}Opção inválida!{RESET}")
-            input(f"{CINZA}Pressione Enter para tentar novamente...{RESET}")
+            print(f"• Erro       : {dados.get('message', 'CEP não encontrado')}")
+
+        print("=" * 55)
+
+    except Exception as e:
+        print(f"\n{VERMELHO}[!] Falha na conexão: {e}{RESET}")
+
+    input(f"\n{CINZA}Pressione Enter para voltar ao menu...{RESET}")
+
+    telefone = telefone.strip().replace(" ", "").replace("-", "").replace("+", "")
+
+    # Coloque aqui as SUAS credenciais REAIS do painel da Z-API:
+    instance_id = "https://api.z-api.io/instances/{instanceId}/token/{token}/profile-picture"
+    token = "https://api.z-api.io/instances/{instanceId}/token/{token}/profile-picture"
+    client_token = "SEU_CLIENT_TOKEN_REAL"
+
+    url = f"https://api.z-api.io/instances/{instance_id}/token/{token}/profile-picture?phone={telefone}"
+
+    headers = {
+        "client-token": client_token,
+        "content-type": "application/json"
+    }
+
+    print(f"\nConsultando foto via Z-API para: +{telefone}...")
+
+    try:
+        resposta = requests.get(url, headers=headers, timeout=10)
+        dados = resposta.json()
+
+        print("=" * 55)
+        print("             RESULTADO FOTO PERFIL (Z-API)")
+        print("=" * 55)
+
+        if resposta.status_code == 200:
+            link_foto = dados.get("link")
+            if link_foto:
+                print(f"• Telefone   : +{telefone}")
+                print(f"• Link da Foto: {link_foto}")
+            else:
+                print(f"• Telefone   : +{telefone}")
+                print(f"• Status     : Não possui foto visível")
+        else:
+            print(f"• Erro       : {dados.get('message', 'Erro na requisição')}")
+
+        print("=" * 55)
+
+    except Exception as e:
+        print(f"\n[!] Falha na conexão: {e}")
+
+    input("\nPressione Enter para voltar ao menu...")
+
+def consultar_didit_ekyc(dado):
+    api_key = "PEMEhOgPZiwYRKcpM1pSCh7_k6ELQ1Ht9HgFgTfuYAM"
+    url = f"https://business.didit.me/api/v1/verify/{dado}"
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    print(f"\n{VERDE}Consultando via Didit API...{RESET}")
+    try:
+        res = requests.get(url, headers=headers, timeout=10)
+        if res.status_code == 200:
+            dados = res.json()
+            print("=" * 45)
+            print(f" Resultado: {dados}")
+            print("=" * 45)
+        else:
+            print(f"\n{VERMELHO}Erro na consulta Didit. Status: {res.status_code}{RESET}")
+    except Exception as e:
+        print(f"\n{VERMELHO}Erro de conexão: {e}{RESET}")
+    input(f"\n{CINZA}Pressione Enter para voltar ao menu...{RESET}")
+
+
+# --- MENU PRINCIPAL ---
+if __name__ == "__main__":
+    while True:
+        exibir_banner()
+        print(f"{VERDE}[1]{RESET} {BRANCO}Consultar CNPJ{RESET}")
+        print(f"{VERDE}[2]{RESET} {BRANCO}Consultar Registro{RESET}")
+        print(f"{VERDE}[3]{RESET} {BRANCO}Consultar CEP{RESET}")
+        print(f"{VERDE}[4]{RESET} {BRANCO}Consultar Didit eKYC{RESET}")
+        print(f"{VERDE}[0]{RESET} {BRANCO}Sair{RESET}")
+        opcao = input(f"\n{VERDE}Opção > {RESET}").strip()
+
+        if opcao == "1":
+            cnpj = input("\nDigite o CNPJ: ")
+            # Se a sua função de CNPJ tiver outro nome, chame ela aqui:
+            consultar_cnpj(cnpj) 
+        elif opcao == "2":
+            dado = input("\nDigite o Telefone com DDI e DDD (Ex: 5571999999999): ")
+            consultar_ekyc_completo(dado)
+        elif opcao == "3":
+            cep = input("\nDigite o CEP (Apenas números): ")
+            consultar_cep(cep)
+        elif opcao == "4":
+            dado = input("\nDigite o dado para consulta: ")
+            consultar_didit_ekyc(dado)
+        elif opcao == "0":
+            print(f"\n{VERDE}Saindo...{RESET}\n")
+            break
+
 
