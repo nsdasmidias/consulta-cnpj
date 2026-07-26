@@ -241,6 +241,37 @@ def consultar_didit_ekyc(dado):
         print(f"\n{VERMELHO}Erro de conexão: {e}{RESET}")
     input(f"\n{CINZA}Pressione Enter para voltar ao menu...{RESET}")
 
+def consultar_ip(ip):
+    url = f"http://ip-api.com/json/{ip}?lang=pt-BR"
+    print(f"\n{VERDE}Consultando IP via ip-api...{RESET}")
+    try:
+        res = requests.get(url, timeout=10)
+        if res.status_code == 200:
+            dados = res.json()
+            if dados.get("status") == "success":
+                print("=" * 45)
+                print(f" IP         : {dados.get('query')}")
+                print(f" País       : {dados.get('country')}")
+                print(f" Estado     : {dados.get('regionName')}")
+                print(f" Cidade     : {dados.get('city')}")
+                print(f" Provedor   : {dados.get('isp')}")
+                print(f" Org        : {dados.get('org')}")
+                print("=" * 45)
+            else:
+                print(f"\n{VERMELHO}IP inválido ou não encontrado.{RESET}")
+        else:
+            print(f"\n{VERMELHO}Erro na consulta. Status: {res.status_code}{RESET}")
+    except Exception as e:
+        print(f"\n{VERMELHO}Erro de conexão: {e}{RESET}")
+    input(f"\n{CINZA}Pressione Enter para voltar ao menu...{RESET}")
+
+        else:
+            print(f"\n{VERMELHO}Erro na consulta. St>")
+    except Exception as e:
+        print(f"\n{VERMELHO}Erro de conexão: {e}{RES>")
+    input(f"\n{CINZA}Pressione Enter para voltar ao >")
+
+
 
 # --- MENU PRINCIPAL ---
 if __name__ == "__main__":
@@ -249,7 +280,7 @@ if __name__ == "__main__":
         print(f"{VERDE}[1]{RESET} {BRANCO}Consultar CNPJ{RESET}")
         print(f"{VERDE}[2]{RESET} {BRANCO}Consultar Registro{RESET}")
         print(f"{VERDE}[3]{RESET} {BRANCO}Consultar CEP{RESET}")
-        print(f"{VERDE}[4]{RESET} {BRANCO}Consultar Didit eKYC{RESET}")
+        print(f"{VERDE}[4]{RESET} {BRANCO}Consultar IP{RESET}")
         print(f"{VERDE}[0]{RESET} {BRANCO}Sair{RESET}")
         opcao = input(f"\n{VERDE}Opção > {RESET}").strip()
 
@@ -264,8 +295,12 @@ if __name__ == "__main__":
             cep = input("\nDigite o CEP (Apenas números): ")
             consultar_cep(cep)
         elif opcao == "4":
-            dado = input("\nDigite o dado para consulta: ")
-            consultar_didit_ekyc(dado)
+            ip = input("\nDigite o IP ou Domínio: ")
+            consultar_ip(ip)
+        elif opcao == "5":
+            cpf = input("\nDigite o CPF (apenas números): ")
+            data_nasc = input("Digite a Data de Nascimento (AAAA-MM-DD): ")
+            consultar_cpf_io(cpf, data_nasc)
         elif opcao == "0":
             print(f"\n{VERDE}Saindo...{RESET}\n")
             break
